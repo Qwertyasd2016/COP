@@ -8,7 +8,7 @@ root.geometry('800x600')
 canv = Canvas(root, bg = 'white')
 canv.pack(fill=BOTH,expand=1)
 class ball():
-    def __init__(self,x=40,y=450):
+    def __init__(self,x = 40,y = 450):
         self.x = x
         self.y = y
         self.r = 10
@@ -16,7 +16,7 @@ class ball():
         self.vy = 0
         self.color = choice(['blue','green','red','brown'])
         self.id = canv.create_oval(self.x-self.r, self.y-self.r, self.x+self.r, self.y+self.r, fill=self.color)
-        self.live = 30
+        self.live = 5
     def set_coords(self):
         canv.coords(self.id, self.x-self.r, self.y-self.r, self.x+self.r, self.y+self.r)
     def move(self):
@@ -87,20 +87,26 @@ class target():
         canv.coords(self.id, x-r,y-r,x+r,y+r)
         canv.itemconfig(self.id, fill = color)
     def hit(self,points = 1):
-        canv.coords(self.id,-100,-100,-100,-100)
+        canv.coords(self.id,-10,-10,-10,-10)
         self.points += points
         canv.itemconfig(self.id_points, text = self.points)
     def set_coords(self):
         canv.coords(self.id, self.x-self.r, self.y-self.r, self.x+self.r, self.y+self.r)
-t2 = target()
+    def motion(self):
+        self.y -= self.vy
+        if self.y <= 0 or self.y >= 600:
+            self.vy = -self.vy
+        self.set_coords()
 t1 = target()
+t2 = target()
 screen1 = canv.create_text(400,300, text = '',font = '28')
 g1 = gun()
 bullet = 0
 balls = []
 def new_game(event=''):
-    global gun, t1, screen1, balls, bullet
+    global gun, t1, t2, screen1, balls, bullet
     t1.new_target()
+    t2.new_target()
     bullet = 0
     balls = []
     canv.bind('<Button-1>', g1.fire2_start)
@@ -109,15 +115,17 @@ def new_game(event=''):
     z = 0.03
     t1.live = 1
     t2.live = 1
-    while t1.live or balls:
+    while (t1.live or t2.live) or balls:
+        if t1.live:
+            t1.motion()
+        if t2.live:
+            t2.motion()
         for b in balls:
             b.move()
             if b.hittest(t1) and t1.live:
-                t1.x += 10
                 t1.live = 0
                 t1.hit()
             if b.hittest(t2) and t2.live:
-                t2.x += 10
                 t2.live = 0
                 t2.hit()
             if not t1.live and not t2.live:
@@ -125,10 +133,11 @@ def new_game(event=''):
                 canv.bind('<ButtonRelease-1>', '')
                 canv.itemconfig(screen1, text = 'Вы уничтожили 2 цели за ' + str(bullet) + ' выстрелов')
         canv.update()
-        time.sleep(0.02)
+        time.sleep(0.03)
         g1.targetting()
         g1.power_up()
     canv.itemconfig(screen1, text = '')
     canv.delete(gun)
     root.after(750,new_game)
 new_game()
+mainloop()
